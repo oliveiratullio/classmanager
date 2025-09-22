@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:16
+    container_name: uni_db
+    environment:
+      POSTGRES_USER: uni
+      POSTGRES_PASSWORD: uni
+      POSTGRES_DB: universidade
+    ports:
+      - "5432:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U uni -d universidade"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: uni_api
+    env_file: ./.env.example
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  adminer:
+    image: adminer
+    container_name: uni_adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+volumes:
+  dbdata:
